@@ -1,0 +1,11 @@
+[
+  {
+    "id": 1,
+    "username": "john_doe",
+    "email": "john@example.com",
+    "lives": 5,
+    "progress": "10",
+    "isVip": true,
+    "removeAds": false
+  }
+]
