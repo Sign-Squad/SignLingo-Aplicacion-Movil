@@ -23,7 +23,7 @@ class _LoginPageState extends State<LoginPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('assets/logo_hands.png', height: 50), // Reemplazar con la ruta del logo
+                Image.asset('assets/sign-lingo-logo.png', height: 50), // Reemplazar con la ruta del logo
                 const SizedBox(width: 8),
                 const Text(
                   'SignLingo',
