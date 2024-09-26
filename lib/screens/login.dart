@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/home.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -9,11 +10,12 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _isRegistering = false; // Controla si se está registrando o iniciando sesión
+  bool _termsAccepted = false; // Controla si el checkbox de términos está marcado
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1e8f59), // Fondo verde
+      backgroundColor: const Color(0xFF248E5C), // Fondo verde
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -52,12 +54,14 @@ class _LoginPageState extends State<LoginPage> {
               _buildTextField(
                 hintText: 'Enter user name',
                 icon: Icons.person,
+                obscureText: true,
               ),
 
             // Email Field
             _buildTextField(
               hintText: 'Enter email',
               icon: Icons.email,
+              obscureText: true,
             ),
 
             // Password Field
@@ -72,8 +76,12 @@ class _LoginPageState extends State<LoginPage> {
               Row(
                 children: [
                   Checkbox(
-                    value: false, // Set this to a state variable in a real app
-                    onChanged: (value) {},
+                    value: _termsAccepted, // Valor del estado actual del checkbox
+                    onChanged: (value) {
+                      setState(() {
+                        _termsAccepted = value ?? false; // Actualiza el estado del checkbox
+                      });
+                    },
                   ),
                   const Text(
                     'I accept all the Terms and Conditions',
@@ -86,31 +94,26 @@ class _LoginPageState extends State<LoginPage> {
             // Create or Login Button
             ElevatedButton(
               onPressed: () {
-                // Handle create/login action
+                if (_isRegistering && !_termsAccepted) {
+                  // Muestra un mensaje de error si el usuario no aceptó los términos
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('You must accept the terms and conditions'),
+                    ),
+                  );
+                } else {
+                  // Maneja la acción de crear cuenta o iniciar sesión
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const HomePage(),));
+                }
               },
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
+                backgroundColor: const Color(0xFF323232), // Color del botón
               ),
               child: Text(
                 _isRegistering ? 'Crear' : 'Iniciar sesión',
                 style: const TextStyle(fontSize: 18, color: Colors.white),
               ),
-            ),
-            const SizedBox(height: 16),
-
-            // Social Login Options
-            const Text(
-              'o con',
-              style: TextStyle(color: Colors.white),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildSocialIcon('assets/google_icon.png'),
-                _buildSocialIcon('assets/facebook_icon.png'),
-                _buildSocialIcon('assets/apple_icon.png'),
-              ],
             ),
           ],
         ),
@@ -159,21 +162,6 @@ class _LoginPageState extends State<LoginPage> {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSocialIcon(String assetPath) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: GestureDetector(
-        onTap: () {
-          // Handle social login
-        },
-        child: Image.asset(
-          assetPath,
-          height: 40,
         ),
       ),
     );
