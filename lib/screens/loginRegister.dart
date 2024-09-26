@@ -50,7 +50,7 @@ class _LoginRegisterPage extends State<LoginRegister> with SingleTickerProviderS
       );
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const Home()),
+        MaterialPageRoute(builder: (context) => const HomeViewWidget()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
