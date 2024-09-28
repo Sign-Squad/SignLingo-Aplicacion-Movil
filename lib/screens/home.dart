@@ -1,7 +1,75 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<Map<String, dynamic>> _unitsData = [];
+  bool _isLoading = true; // Mostrar indicador de carga mientras se obtienen los datos
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSectionsData(); // Llamar a la API para obtener las secciones
+  }
+
+  // Función para obtener el token y llamar al API
+  Future<void> _fetchSectionsData() async {
+    try {
+      // Obtener el token guardado durante el login
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? token = prefs.getString('token');
+
+      if (token != null) {
+        // Realizar la solicitud GET al endpoint con el Bearer Token
+        var url = Uri.parse('https://signlingo-backend.onrender.com/api/v1/sections');
+        var response = await http.get(
+          url,
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        );
+
+        if (response.statusCode == 200) {
+          // Decodificar los datos JSON recibidos
+          var data = jsonDecode(response.body) as List;
+          setState(() {
+            _unitsData = data.map((section) {
+              return {
+                'id': section['id'],
+                'sectionName': section['sectionName'],
+                'description': section['description'],
+              };
+            }).toList();
+            _isLoading = false; // Detener el indicador de carga
+          });
+        } else {
+          debugPrint('Error al obtener secciones: ${response.body}');
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      } else {
+        debugPrint('Token no encontrado');
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (error) {
+      debugPrint('Error al conectar con el servidor: $error');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,10 +88,10 @@ class HomePage extends StatelessWidget {
             // Acción de configuración
           },
         ),
-        actions: [
+        actions: const [
           Row(
             children: [
-              const Text(
+              Text(
                 '5',
                 style: TextStyle(
                   color: Colors.white,
@@ -31,108 +99,57 @@ class HomePage extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.favorite,
                 size: 30,
                 color: Colors.red,
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
             ],
           )
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Centrar el logo y el texto
-              Center(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator()) // Mostrar indicador de carga
+            : SingleChildScrollView(
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Image.asset(
-                      'assets/sign-lingo-logo.png',
-                      height: 80,
-                    ),
-                    const Text(
-                      'SignLingo',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    // Centrar el logo y el texto
+                    Center(
+                      child: Column(
+                        children: [
+                          Image.asset(
+                            'assets/sign-lingo-logo.png',
+                            height: 80,
+                          ),
+                          const Text(
+                            'SignLingo',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    const SizedBox(height: 24),
+
+                    // Mostrar las unidades obtenidas de la API
+                    ..._buildContentFromData(),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // Construir las unidades y lecciones dinámicamente desde el JSON
-              ..._buildContentFromData(),
-            ],
-          ),
-        ),
       ),
     );
   }
 
-  // Datos de las unidades
-  List<Map<String, dynamic>> _getUnitsData() {
-    return [
-      {
-        "id": 1,
-        "sectionName": "Abecedario",
-        "description": "Aprenderás el abecedario en lenguaje de señas"
-      },
-      {
-        "id": 2,
-        "sectionName": "Saludos",
-        "description": "Aprenderás a saludar en lenguaje de señas"
-      },
-    ];
-  }
-
-  // Función que retorna los datos de las lecciones como un JSON interno
-  List<Map<String, dynamic>> _getLessonsData() {
-    return [
-      {
-        'icon': 'book',
-        'title': 'Introducción',
-        'position': 1,
-        'SectionID': 1,
-      },
-      {
-        'icon': 'abc',
-        'title': 'Abecedario 1',
-        'position': 3,
-        'SectionID': 1,
-      },
-      {
-        'icon': 'numbers_outlined',
-        'title': 'Números 1',
-        'position': 7,
-        'SectionID': 2,
-      },
-      {
-        'icon': 'numbers_outlined',
-        'title': 'Números 2',
-        'SectionID': 2, // sin 'position', debe centrarse automáticamente
-      },
-      {
-        'icon': 'bookmark',
-        'title': 'Resumen',
-        'SectionID': 1, // sin 'position', debe centrarse automáticamente
-      },
-    ];
-  }
-
-  // Combina unidades y lecciones
+  // Construir las unidades desde los datos obtenidos de la API
   List<Widget> _buildContentFromData() {
-    var unitsData = _getUnitsData();
-    var lessonsData = _getLessonsData();
-
-    return unitsData.map((unit) {
+    return _unitsData.map((unit) {
       // Crear el widget para la unidad
       List<Widget> content = [
         _buildUnit(
@@ -142,16 +159,7 @@ class HomePage extends StatelessWidget {
         const SizedBox(height: 16),
       ];
 
-      // Agregar lecciones correspondientes a esta unidad
-      var filteredLessons = lessonsData.where((lesson) => lesson['SectionID'] == unit['id']).toList();
-      content.addAll(filteredLessons.map((lesson) {
-        return _buildLessonStep(
-          icon: _getIconFromString(lesson['icon']),
-          title: lesson['title'],
-          iconColor: const Color(0xFFBCEFB3),
-          position: lesson['position'] ?? 5,
-        );
-      }).toList());
+      // Aquí puedes agregar lecciones correspondientes a esta unidad, si lo deseas
 
       // Separar cada unidad
       content.add(const SizedBox(height: 24));
@@ -194,67 +202,5 @@ class HomePage extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  // Widget para cada lección con la propiedad 'position'
-  Widget _buildLessonStep({
-    required IconData icon,
-    required String title,
-    required Color iconColor,
-    required int position,
-  }) {
-    return Row(
-      children: [
-        Expanded(
-          child: Align(
-            alignment: _getPositionAlignment(position),
-            child: Column(
-              children: [
-                // Icono circular
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: iconColor,
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 30,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Función para obtener la alineación en función de la posición
-  Alignment _getPositionAlignment(int position) {
-    double alignmentX = (position - 5) / 4;
-    return Alignment(alignmentX, 0);
-  }
-
-  // Optimización de _getIconFromString usando un mapa para evitar múltiples casos
-  IconData _getIconFromString(String iconStr) {
-    Map<String, IconData> iconMap = {
-      'book': Icons.book,
-      'abc': Icons.abc,
-      'numbers_outlined': Icons.numbers_outlined,
-      'bookmark': Icons.bookmark,
-    };
-    return iconMap[iconStr] ?? Icons.help;
   }
 }
