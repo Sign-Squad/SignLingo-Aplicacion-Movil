@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'levelsPage.dart'; // Importar la nueva pantalla LevelsPage
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({Key? key}) : super(key: key);
 
   @override
   _HomePageState createState() => _HomePageState();
@@ -114,35 +115,35 @@ class _HomePageState extends State<HomePage> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator()) // Mostrar indicador de carga
             : SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Centrar el logo y el texto
+              Center(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Centrar el logo y el texto
-                    Center(
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            'assets/sign-lingo-logo.png',
-                            height: 80,
-                          ),
-                          const Text(
-                            'SignLingo',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
+                    Image.asset(
+                      'assets/sign-lingo-logo.png',
+                      height: 80,
+                    ),
+                    const Text(
+                      'SignLingo',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    // Mostrar las unidades obtenidas de la API
-                    ..._buildContentFromData(),
                   ],
                 ),
               ),
+              const SizedBox(height: 24),
+
+              // Mostrar las unidades obtenidas de la API
+              ..._buildContentFromData(),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -151,20 +152,17 @@ class _HomePageState extends State<HomePage> {
   List<Widget> _buildContentFromData() {
     return _unitsData.map((unit) {
       // Crear el widget para la unidad
-      List<Widget> content = [
-        _buildUnit(
-          sectionName: unit['sectionName'],
-          description: unit['description'],
-        ),
-        const SizedBox(height: 16),
-      ];
-
-      // Aquí puedes agregar lecciones correspondientes a esta unidad, si lo deseas
-
-      // Separar cada unidad
-      content.add(const SizedBox(height: 24));
-
-      return Column(children: content);
+      return Column(
+        children: [
+          _buildUnit(
+            sectionName: unit['sectionName'],
+            description: unit['description'],
+            id: unit['id']
+          ),
+          const SizedBox(height: 16),
+          const SizedBox(height: 24),
+        ],
+      );
     }).toList();
   }
 
@@ -172,34 +170,51 @@ class _HomePageState extends State<HomePage> {
   Widget _buildUnit({
     required String sectionName,
     required String description,
+    required int id
   }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1e8f59),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            sectionName,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+    return GestureDetector(
+      onTap: () {
+        // Navegar a la nueva pantalla LevelsPage con los detalles de la sección
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LevelsPage(
+              sectionName: sectionName,
+              description: description,
+              sectionId: id,
+
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            description,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.white70,
+        );
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1e8f59),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              sectionName,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              description,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.white70,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
