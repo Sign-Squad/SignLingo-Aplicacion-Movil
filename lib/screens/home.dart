@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'levelsPage.dart'; // Importar la nueva pantalla LevelsPage
+import 'configuration.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -87,6 +88,7 @@ class _HomePageState extends State<HomePage> {
           ),
           onPressed: () {
             // Acción de configuración
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfigurationPage()));
           },
         ),
         actions: const [
