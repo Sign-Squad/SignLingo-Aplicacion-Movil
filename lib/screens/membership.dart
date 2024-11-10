@@ -33,7 +33,7 @@ class MembershipPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Image.network(
-                'https://i.pinimg.com/564x/74/24/49/742449e57202bd656494fd7c83520681.jpg',
+                'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSfNlDj82r06zNAiVklghEdPFS-BkO2Avi9RA&s',
                 height: 200,
               ),
               const SizedBox(height: 20),
