@@ -104,9 +104,11 @@ class _ConfigurationPageState extends State<ConfigurationPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text(
-          'Configuraciones',
-          style: TextStyle(color: Colors.white),
+        title: const Center(
+          child: Text(
+            'Configuraciones',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
         backgroundColor: Colors.black,
         elevation: 0,
@@ -119,6 +121,15 @@ class _ConfigurationPageState extends State<ConfigurationPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Imagen debajo del título
+                    Center(
+                      child: Image.network(
+                        'https://static.vecteezy.com/system/resources/thumbnails/005/545/335/small/user-sign-icon-person-symbol-human-avatar-isolated-on-white-backogrund-vector.jpg',
+                        width: 100,
+                        height: 100,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     const Text(
                       'Usuario',
                       style: TextStyle(color: Colors.white, fontSize: 16),
