@@ -1,203 +1,233 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screens/membership.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'membership.dart';
 
 class ConfigurationPage extends StatefulWidget {
-  const ConfigurationPage({super.key});
+  const ConfigurationPage({Key? key}) : super(key: key);
 
   @override
   _ConfigurationPageState createState() => _ConfigurationPageState();
 }
 
 class _ConfigurationPageState extends State<ConfigurationPage> {
-  final TextEditingController _userController = TextEditingController();
+  String? _token;
+  String? _userId;
+  String? _username;
+  Map<String, dynamic>? _userData;
+
+  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _isPasswordVisible = false;
-  String _selectedLanguage = 'Español'; // Idioma seleccionado por defecto
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _token = prefs.getString('token');
+    _userId = prefs.getString('userId');
+    _username = prefs.getString('username');
+
+    if (_token != null && _username != null) {
+      final url = Uri.parse('https://signlingo-backend.onrender.com/api/v1/users/username/$_username');
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $_token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final userData = jsonDecode(response.body);
+        setState(() {
+          _userData = userData;
+          _usernameController.text = userData['username'];
+          _emailController.text = userData['email'];
+        });
+      }
+    }
+  }
+
+  Future<void> _updateUserData() async {
+    if (_userId == null || _token == null || _userData == null) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final updatedData = {
+      ..._userData!,
+      'username': _usernameController.text,
+      'email': _emailController.text,
+      'password': _passwordController.text,
+    };
+
+    final url = Uri.parse('https://signlingo-backend.onrender.com/api/v1/users/$_userId');
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      },
+      body: jsonEncode(updatedData),
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('¡Datos actualizados correctamente!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al actualizar los datos.')),
+      );
+    }
+  }
+
+  Future<void> _logout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text(
-         'Configuraciones',
-         style: TextStyle(
-         color: Colors.white,
-         fontSize: 30,
-         fontWeight: FontWeight.bold),
-         ),
-        centerTitle: true,
-        backgroundColor: Colors.black,
-       ),
-
-      backgroundColor: Colors.black, // Fondo negro
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: <Widget>[
-            const SizedBox(height: 20),
-            const Text(
-              'Usuario',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white, // Texto blanco
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _userController,
-              style: const TextStyle(color: Colors.white,fontSize : 18,), // Texto de entrada blanco
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Ingrese su nombre de usuario',
-                hintStyle: const TextStyle(color: Colors.white), // Texto del hint en blanco suave
-                filled: true,
-                fillColor: Colors.grey[800], // Fondo de la caja de texto gris oscuro
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Idioma',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white, // Texto blanco
-              ),
-            ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              value: _selectedLanguage,
-              dropdownColor: Colors.grey[800], // Color del dropdown gris oscuro
-              style: const TextStyle(color: Colors.white, fontSize: 18), // Texto blanco en el menú
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedLanguage = newValue!;
-                });
-              },
-              items: <String>['Español', 'Inglés']
-                  .map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                filled: true,
-                fillColor: Colors.grey[800], // Fondo de la caja desplegable gris oscuro
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Correo',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white, // Texto blanco
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _emailController,
-              style: const TextStyle(color: Colors.white), // Texto de entrada blanco
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Ingrese su correo electrónico',
-                hintStyle: const TextStyle(color: Colors.white,fontSize : 18, ), // Texto del hint en blanco suave
-                filled: true,
-                fillColor: Colors.grey[800], // Fondo de la caja de texto gris oscuro
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Contraseña',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white, // Texto blanco
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _passwordController,
-              obscureText: !_isPasswordVisible, // Controla la visibilidad de la contraseña
-              style: const TextStyle(color: Colors.white), // Texto de entrada blanco
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Ingrese su contraseña',
-                hintStyle: const TextStyle(color: Colors.white,fontSize : 18,), // Texto del hint en blanco suave
-                filled: true,
-                fillColor: Colors.grey[800], // Fondo de la caja de texto gris oscuro
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                    color: Colors.white, // Icono blanco
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isPasswordVisible = !_isPasswordVisible;
-                    });
-                  },
-                ),
-              ),
-            ),
-            const SizedBox(height: 30),
-            // Botón de Comprar Membresía
-            ElevatedButton.icon(
-              onPressed: () {
-                 Navigator.push(
-                  context,
-                 MaterialPageRoute(builder: (context) => const MembershipPage()),
-                );
-              },
-              icon: const Icon(Icons.star, color: Colors.yellow),
-              label: const Text(
-                'Comprar Membresía',
-                style: TextStyle(fontSize: 25,
-                color: Colors.white,
-                fontWeight: FontWeight.bold),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue, // Color del botón
-                minimumSize: const Size(double.infinity, 50), // Tamaño
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Botón de Guardar Cambios
-            ElevatedButton(
-              onPressed: () {
-                // Acción para guardar cambios
-              },
-              child: const Text(
-                'Guardar Cambios',
-                style: TextStyle(fontSize: 25,
-                color: Colors.white,
-                fontWeight: FontWeight.bold),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green, // Color del botón
-                minimumSize: const Size(double.infinity, 50), // Tamaño
-              ),
-            ),
-            const SizedBox(height: 20),
-            // Botón de Cerrar Sesión
-            ElevatedButton(
-              onPressed: () {
-                // Acción para cerrar sesión
-              },
-              child: const Text(
-                'Cerrar Sesión',
-                style: TextStyle(color: Colors.white, fontSize: 25,fontWeight: FontWeight.bold),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, // Color del botón
-                minimumSize: const Size(double.infinity, 50), // Tamaño
-              ),
-            ),
-          ],
+          'Configuraciones',
+          style: TextStyle(color: Colors.white),
         ),
+        backgroundColor: Colors.black,
+        elevation: 0,
+      ),
+      body: Center(
+        child: _token != null && _userId != null
+            ? Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Usuario',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _usernameController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.grey[700],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Correo',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _emailController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.grey[700],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Contraseña',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.grey[700],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _updateUserData,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      child: const Text(
+                        'Guardar cambios',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const MembershipPage()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.lightBlueAccent,
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      icon: const Icon(Icons.star, color: Colors.white),
+                      label: const Text(
+                        'Comprar Membresía',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _logout,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      child: const Text(
+                        'Cerrar sesión',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : const CircularProgressIndicator(),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 }
