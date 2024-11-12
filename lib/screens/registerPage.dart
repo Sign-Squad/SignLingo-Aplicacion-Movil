@@ -42,7 +42,7 @@ class _RegisterPageState extends State<RegisterPage> {
           "email": email,
           "password": password,
           "lives": 5,
-          "progress": 10,
+          "progress": 0,
           "isVip": false,
         }),
       );
@@ -71,88 +71,110 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF248E5C), // Fondo verde
       appBar: AppBar(
         title: const Text('Registro'),
         backgroundColor: const Color(0xFF248E5C),
+        elevation: 0, // Elimina la sombra del AppBar
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _usernameController,
-              decoration: InputDecoration(
-                hintText: 'Nombre de usuario',
-                filled: true,
-                fillColor: Colors.white,
-                prefixIcon: const Icon(Icons.person, color: Colors.black),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Crear Cuenta',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _emailController,
-              decoration: InputDecoration(
-                hintText: 'Correo electrónico',
-                filled: true,
-                fillColor: Colors.white,
-                prefixIcon: const Icon(Icons.email, color: Colors.black),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 32),
+              TextField(
+                controller: _usernameController,
+                decoration: InputDecoration(
+                  hintText: 'Nombre de usuario',
+                  filled: true,
+                  fillColor: Colors.white,
+                  prefixIcon: const Icon(Icons.person, color: Colors.black),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: InputDecoration(
-                hintText: 'Contraseña',
-                filled: true,
-                fillColor: Colors.white,
-                prefixIcon: const Icon(Icons.lock, color: Colors.black),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  hintText: 'Correo electrónico',
+                  filled: true,
+                  fillColor: Colors.white,
+                  prefixIcon: const Icon(Icons.email, color: Colors.black),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _isLoading ? null : _handleRegister,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                backgroundColor: Colors.green,
+              const SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  hintText: 'Contraseña',
+                  filled: true,
+                  fillColor: Colors.white,
+                  prefixIcon: const Icon(Icons.lock, color: Colors.black),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
               ),
-              child: _isLoading
-                  ? const CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    )
-                  : const Text(
-                      'Registrar',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
-            ),
-            const SizedBox(height: 20),
-            TextButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                );
-              },
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.grey,
-                minimumSize: const Size(double.infinity, 50),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _handleRegister,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  backgroundColor: Colors.green,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      )
+                    : const Text(
+                        'Registrar',
+                        style: TextStyle(fontSize: 18, color: Colors.white),
+                      ),
               ),
-              child: const Text(
-                'Cancelar',
-                style: TextStyle(fontSize: 18, color: Colors.white),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.grey,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Cancelar',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
