@@ -15,7 +15,7 @@ class ErrorPayment extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Image.network(
-            'https://i.pinimg.com/enabled_hi/564x/01/0c/14/010c149fb7d9c04a49e64fa8a9a77adb.jpg',
+            'https://img.freepik.com/vector-premium/simbolo-error_592324-8315.jpg',
             height: 150,
             fit: BoxFit.cover,
           ),
