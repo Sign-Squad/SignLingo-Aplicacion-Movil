@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home.dart';
+import 'registerPage.dart'; // Importa la ventana de registro
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -153,6 +154,23 @@ class _LoginPageState extends State<LoginPage> {
                       'Iniciar sesión',
                       style: TextStyle(fontSize: 18, color: Colors.white),
                     ),
+            ),
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RegisterPage()),
+                );
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.grey, // Color plomo
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              child: const Text(
+                'Registro',
+                style: TextStyle(fontSize: 18, color: Colors.white), // Letras blancas
+              ),
             ),
           ],
         ),
