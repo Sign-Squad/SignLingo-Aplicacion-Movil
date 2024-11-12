@@ -15,7 +15,7 @@ class CorrectPayment extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Image.network(
-            'https://i.pinimg.com/enabled_hi/564x/01/0c/14/010c149fb7d9c04a49e64fa8a9a77adb.jpg',
+            'https://img.freepik.com/fotos-premium/me-gusta-o-simbolo-correcto-boton-confirmado-o-aprobado-icono-marca-verificacion-ilustracion-3d_90099-1536.jpg',
             height: 150,
             fit: BoxFit.cover,
           ),
