@@ -31,7 +31,7 @@ class _HomePageState extends State<HomePage> {
 
       if (token != null) {
         // Realizar la solicitud GET al endpoint con el Bearer Token
-        var url = Uri.parse('https://signlingo-backend.onrender.com/api/v1/sections');
+        var url = Uri.parse('http://10.0.2.2:8080/api/v1/sections');
         var response = await http.get(
           url,
           headers: {

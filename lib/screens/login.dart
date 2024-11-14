@@ -26,7 +26,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      var loginUrl = Uri.parse('https://signlingo-backend.onrender.com/auth/login');
+      var loginUrl = Uri.parse('http://10.0.2.2:8080/auth/login');
       var loginResponse = await http.post(
         loginUrl,
         headers: {"Content-Type": "application/json"},
@@ -37,7 +37,7 @@ class _LoginPageState extends State<LoginPage> {
         var loginData = jsonDecode(loginResponse.body);
         String token = loginData['token'];
 
-        var userUrl = Uri.parse('https://signlingo-backend.onrender.com/api/v1/users/username/$username');
+        var userUrl = Uri.parse('http://10.0.2.2:8080/api/v1/users/username/$username');
         var userResponse = await http.get(
           userUrl,
           headers: {"Authorization": "Bearer $token"},
