@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/question3.dart';
+import 'package:flutter_application_1/screens/question4.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'configuration.dart';
@@ -238,46 +240,138 @@ class _HomePageState extends State<HomePage> {
           iconUrl: lesson['iconUrl'],
           title: lesson['levelName'],
           position: lesson['position'],
+          id: lesson['id'],
         );
       }).toList(),
     );
   }
 
-  Widget _buildLessonStep({required String iconUrl, required String title, required int position}) {
-    // Escala el valor de posición más al centro
+  Widget _buildLessonStep({
+    required String iconUrl,
+    required String title,
+    required int position,
+    required int id,
+  }) {
     double alignmentX = (position - 5) / 6; // Rango más controlado de -1 a 1
 
     return Align(
       alignment: Alignment(alignmentX, 0),
-      child: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 10.0),
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: const Color(0xFFBCEFB3),
+      child: GestureDetector(
+        onTap: () async {
+          try {
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            String? token = prefs.getString('token');
+
+            if (token == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Usuario no autenticado')),
+              );
+              return;
+            }
+
+            // Obtener preguntas del nivel desde el backend
+            var url = Uri.parse('http://10.0.2.2:8080/api/v1/questions/level/$id');
+            var response = await http.get(
+              url,
+              headers: {
+                'Authorization': 'Bearer $token',
+                'Content-Type': 'application/json',
+              },
+            );
+
+            if (response.statusCode == 200) {
+              var questions = jsonDecode(response.body);
+              if (questions.isNotEmpty) {
+                _navigateToQuestion(questions, 0); // Inicia desde la primera pregunta
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No hay preguntas disponibles para este nivel')),
+                );
+              }
+            } else if (response.statusCode == 400) {
+              debugPrint('Solicitud incorrecta: ${response.body}');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error 400: Solicitud incorrecta')),
+              );
+            } else if (response.statusCode == 403) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Acceso denegado: Verifica tus permisos')),
+              );
+            } else {
+              debugPrint('Error inesperado: ${response.body}');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error ${response.statusCode}: ${response.body}')),
+              );
+            }
+          } catch (error) {
+            debugPrint('Error de conexión: $error');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error de conexión: $error')),
+            );
+          }
+        },
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10.0),
+              width: 60,
+              height: 60,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFBCEFB3),
+              ),
+              child: Icon(
+                _getIconFromString(iconUrl),
+                size: 30,
+                color: Colors.black,
+              ),
             ),
-            child: Icon(
-              _getIconFromString(iconUrl),
-              size: 30,
-              color: Colors.black,
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+  void _navigateToQuestion(List<dynamic> questions, int questionIndex) {
+    final currentQuestion = questions[questionIndex];
+    final String questionType = currentQuestion['questionType'] ?? '';
+
+    Widget nextScreen;
+
+    if (questionType == 'pregunta-tipo3') {
+      nextScreen = QuestionType3(
+        questions: questions,
+        questionIndex: questionIndex,
+      );
+    } else if (questionType == 'pregunta-tipo4') {
+      nextScreen = QuestionType4(
+        questions: questions,
+        questionIndex: questionIndex,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tipo de pregunta desconocido: $questionType')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => nextScreen),
+    );
+  }
+
+
+
+
 
   IconData _getIconFromString(String iconStr) {
     Map<String, IconData> iconMap = {
