@@ -41,5 +41,8 @@ flutter:
 
   assets:
     - assets/
+    - assets/sounds/
     - assets/models/modelo_yolov8.tflite
     - assets/models/sign_labels.txt
+    - assets/sounds/correct.mp3
+    - assets/sounds/incorrect.mp3
