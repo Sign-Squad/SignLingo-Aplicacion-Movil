@@ -8,7 +8,7 @@ void navigateToQuestion(BuildContext context, List<dynamic> questions, int quest
   final String questionType = currentQuestion['questionType'] ?? '';
 
   if (questionType == 'pregunta-tipo3') {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => QuestionType3(
@@ -18,7 +18,7 @@ void navigateToQuestion(BuildContext context, List<dynamic> questions, int quest
       ),
     );
   } else if (questionType == 'pregunta-tipo4') {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => QuestionType4(
@@ -33,3 +33,4 @@ void navigateToQuestion(BuildContext context, List<dynamic> questions, int quest
     );
   }
 }
+
