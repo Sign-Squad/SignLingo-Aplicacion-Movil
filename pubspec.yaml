@@ -11,15 +11,29 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   shared_preferences: ^2.0.15
   http: ^1.2.2
   cupertino_icons: ^1.0.8
+  image_picker: ^1.1.2
+  flutter_launcher_icons: ^0.14.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^4.0.0
+
+flutter_launcher_icons:
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo-mano.png"
+  adaptive_icon_background: "#FFFFFF" # Un color de fondo sólido como blanco
+  adaptive_icon_foreground: "assets/logo-mano.png"
+
 
 flutter:
   uses-material-design: true

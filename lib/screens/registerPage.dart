@@ -33,7 +33,7 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
-      var url = Uri.parse('https://signlingo-backend.onrender.com/auth/register');
+      var url = Uri.parse('http://10.0.2.2:8080/auth/register');
       var response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/question3.dart';
+import 'package:flutter_application_1/screens/question4.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'levelsPage.dart'; // Importar la nueva pantalla LevelsPage
 import 'configuration.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,62 +15,94 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Map<String, dynamic>> _unitsData = [];
-  bool _isLoading = true; // Mostrar indicador de carga mientras se obtienen los datos
+  Map<int, List<Map<String, dynamic>>> _levelsBySection = {};
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchSectionsData(); // Llamar a la API para obtener las secciones
+    _fetchSectionsData(); // Llamar a la API para obtener secciones
   }
 
-  // Función para obtener el token y llamar al API
   Future<void> _fetchSectionsData() async {
     try {
-      // Obtener el token guardado durante el login
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String? token = prefs.getString('token');
 
-      if (token != null) {
-        // Realizar la solicitud GET al endpoint con el Bearer Token
-        var url = Uri.parse('https://signlingo-backend.onrender.com/api/v1/sections');
-        var response = await http.get(
-          url,
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        );
+      if (token == null) {
+        debugPrint("Token no encontrado.");
+        setState(() => _isLoading = false);
+        return;
+      }
 
-        if (response.statusCode == 200) {
-          // Decodificar los datos JSON recibidos
-          var data = jsonDecode(response.body) as List;
-          setState(() {
-            _unitsData = data.map((section) {
-              return {
-                'id': section['id'],
-                'sectionName': section['sectionName'],
-                'description': section['description'],
-              };
-            }).toList();
-            _isLoading = false; // Detener el indicador de carga
-          });
-        } else {
-          debugPrint('Error al obtener secciones: ${response.body}');
-          setState(() {
-            _isLoading = false;
-          });
+      var sectionsUrl = Uri.parse('http://10.0.2.2:8080/api/v1/sections');
+      var sectionsResponse = await http.get(
+        sectionsUrl,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (sectionsResponse.statusCode == 200) {
+        var sectionsData = jsonDecode(sectionsResponse.body) as List;
+
+        setState(() {
+          _unitsData = sectionsData.map((section) {
+            return {
+              'id': section['id'],
+              'sectionName': section['sectionName'],
+              'description': section['description'],
+            };
+          }).toList();
+        });
+
+        // Fetch levels for each section
+        for (var section in _unitsData) {
+          await _fetchLevelsForSection(section['id'], token);
         }
       } else {
-        debugPrint('Token no encontrado');
-        setState(() {
-          _isLoading = false;
-        });
+        debugPrint('Error al obtener secciones: ${sectionsResponse.body}');
       }
     } catch (error) {
       debugPrint('Error al conectar con el servidor: $error');
+    } finally {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _fetchLevelsForSection(int sectionId, String token) async {
+    try {
+      var levelsUrl = Uri.parse('http://10.0.2.2:8080/api/v1/levels/section/$sectionId');
+      var levelsResponse = await http.get(
+        levelsUrl,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (levelsResponse.statusCode == 200) {
+        var levelsData = jsonDecode(levelsResponse.body) as List;
+
+        setState(() {
+          _levelsBySection[sectionId] = levelsData.map((level) {
+            return {
+              'id': level['id'],
+              'levelName': level['levelName'],
+              'iconUrl': level['iconUrl'],
+              'position': level['position'] ?? 5,
+              'totalQuestions': level['totalQuestions'],
+            };
+          }).toList();
+        });
+      } else {
+        debugPrint('Error al obtener niveles para la sección $sectionId: ${levelsResponse.body}');
+      }
+    } catch (error) {
+      debugPrint('Error al conectar con el servidor para niveles: $error');
     }
   }
 
@@ -87,7 +120,6 @@ class _HomePageState extends State<HomePage> {
             color: Colors.white,
           ),
           onPressed: () {
-            // Acción de configuración
             Navigator.push(context, MaterialPageRoute(builder: (context) => const ConfigurationPage()));
           },
         ),
@@ -115,12 +147,11 @@ class _HomePageState extends State<HomePage> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator()) // Mostrar indicador de carga
+            ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Centrar el logo y el texto
               Center(
                 child: Column(
                   children: [
@@ -140,8 +171,6 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Mostrar las unidades obtenidas de la API
               ..._buildContentFromData(),
             ],
           ),
@@ -150,74 +179,207 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Construir las unidades desde los datos obtenidos de la API
   List<Widget> _buildContentFromData() {
     return _unitsData.map((unit) {
-      // Crear el widget para la unidad
+      var sectionId = unit['id'];
+      var levels = _levelsBySection[sectionId] ?? [];
+
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildUnit(
             sectionName: unit['sectionName'],
             description: unit['description'],
-            id: unit['id']
           ),
           const SizedBox(height: 16),
+          if (levels.isNotEmpty) _buildLessonsColumn(levels),
           const SizedBox(height: 24),
         ],
       );
     }).toList();
   }
 
-  // Widget para cada unidad
-  Widget _buildUnit({
-    required String sectionName,
-    required String description,
-    required int id
-  }) {
-    return GestureDetector(
-      onTap: () {
-        // Navegar a la nueva pantalla LevelsPage con los detalles de la sección
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => LevelsPage(
-              sectionName: sectionName,
-              description: description,
-              sectionId: id,
-
+  Widget _buildUnit({required String sectionName, required String description}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1e8f59),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            sectionName,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.white70,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLessonsColumn(List<Map<String, dynamic>> lessons) {
+    lessons.sort((a, b) => a['position'].compareTo(b['position'])); // Ordenar por posición
+
+    return Column(
+      children: lessons.map((lesson) {
+        return _buildLessonStep(
+          iconUrl: lesson['iconUrl'],
+          title: lesson['levelName'],
+          position: lesson['position'],
+          id: lesson['id'],
         );
-      },
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1e8f59),
-          borderRadius: BorderRadius.circular(8),
-        ),
+      }).toList(),
+    );
+  }
+
+  Widget _buildLessonStep({
+    required String iconUrl,
+    required String title,
+    required int position,
+    required int id,
+  }) {
+    double alignmentX = (position - 5) / 6; // Rango más controlado de -1 a 1
+
+    return Align(
+      alignment: Alignment(alignmentX, 0),
+      child: GestureDetector(
+        onTap: () async {
+          try {
+            SharedPreferences prefs = await SharedPreferences.getInstance();
+            String? token = prefs.getString('token');
+
+            if (token == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Usuario no autenticado')),
+              );
+              return;
+            }
+
+            // Obtener preguntas del nivel desde el backend
+            var url = Uri.parse('http://10.0.2.2:8080/api/v1/questions/level/$id');
+            var response = await http.get(
+              url,
+              headers: {
+                'Authorization': 'Bearer $token',
+                'Content-Type': 'application/json',
+              },
+            );
+
+            if (response.statusCode == 200) {
+              var questions = jsonDecode(response.body);
+              if (questions.isNotEmpty) {
+                _navigateToQuestion(questions, 0); // Inicia desde la primera pregunta
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No hay preguntas disponibles para este nivel')),
+                );
+              }
+            } else if (response.statusCode == 400) {
+              debugPrint('Solicitud incorrecta: ${response.body}');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error 400: Solicitud incorrecta')),
+              );
+            } else if (response.statusCode == 403) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Acceso denegado: Verifica tus permisos')),
+              );
+            } else {
+              debugPrint('Error inesperado: ${response.body}');
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error ${response.statusCode}: ${response.body}')),
+              );
+            }
+          } catch (error) {
+            debugPrint('Error de conexión: $error');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error de conexión: $error')),
+            );
+          }
+        },
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              sectionName,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10.0),
+              width: 60,
+              height: 60,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFBCEFB3),
+              ),
+              child: Icon(
+                _getIconFromString(iconUrl),
+                size: 30,
+                color: Colors.black,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              description,
+              title,
+              textAlign: TextAlign.center,
               style: const TextStyle(
+                color: Colors.white,
                 fontSize: 16,
-                color: Colors.white70,
               ),
             ),
           ],
         ),
       ),
     );
+  }
+  void _navigateToQuestion(List<dynamic> questions, int questionIndex) {
+    final currentQuestion = questions[questionIndex];
+    final String questionType = currentQuestion['questionType'] ?? '';
+
+    Widget nextScreen;
+
+    if (questionType == 'pregunta-tipo3') {
+      nextScreen = QuestionType3(
+        questions: questions,
+        questionIndex: questionIndex,
+      );
+    } else if (questionType == 'pregunta-tipo4') {
+      nextScreen = QuestionType4(
+        questions: questions,
+        questionIndex: questionIndex,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tipo de pregunta desconocido: $questionType')),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => nextScreen),
+    );
+  }
+
+
+
+
+
+  IconData _getIconFromString(String iconStr) {
+    Map<String, IconData> iconMap = {
+      'bookmark': Icons.bookmark,
+      'book': Icons.book,
+      'abc': Icons.abc,
+      'numbers_outlined': Icons.numbers_outlined,
+    };
+    return iconMap[iconStr] ?? Icons.help;
   }
 }
