@@ -1,11 +1,9 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/playSound.dart';
 import 'package:image_picker/image_picker.dart';
-
 import 'detect-image.dart';
 import 'navigateToQuestion.dart';
-
 
 class QuestionType3 extends StatefulWidget {
   final List<dynamic> questions; // Lista de preguntas
@@ -24,6 +22,7 @@ class QuestionType3 extends StatefulWidget {
 class _QuestionType3State extends State<QuestionType3> {
   XFile? _imageFile; // Foto capturada
   final ImagePicker _picker = ImagePicker();
+  String _detectedClass = ''; // Clase detectada por el servidor
 
   Future<void> _takePhoto() async {
     final image = await _picker.pickImage(source: ImageSource.camera);
@@ -33,13 +32,93 @@ class _QuestionType3State extends State<QuestionType3> {
       });
 
       // Llamar a la función para cargar la imagen al servidor
-      await uploadImage(File(_imageFile!.path));
+      final detectedClass = await uploadImage(File(_imageFile!.path));
+      if (detectedClass != null) {
+        setState(() {
+          _detectedClass = detectedClass;
+
+        });
+      }
     }
   }
 
+  Future<void> _validateAndContinue() async {
+    final currentQuestion = widget.questions[widget.questionIndex];
+    final String correctAnswer = currentQuestion['correctAnswer']?['textContent'] ?? '';
+
+    if (_detectedClass == correctAnswer) {
+      // Respuesta correcta
+      await playSound('sounds/correct.mp3'); // Reproduce sonido de éxito
+      await _showDialog(
+        title: 'Respuesta Correcta',
+        color: Colors.green,
+        buttonText: 'Continuar',
+        onPressed: _goToNextQuestion,
+      );
+    } else {
+      // Respuesta incorrecta
+      await playSound('sounds/incorrect.mp3'); // Reproduce sonido de error
+      await _showDialog(
+        title: 'Respuesta Incorrecta',
+        color: Colors.red,
+        buttonText: 'Volver a Intentar',
+        onPressed: Navigator.of(context).pop, // Cierra el diálogo
+      );
+    }
+  }
+
+  Future<void> _showDialog({
+    required String title,
+    required Color color,
+    required String buttonText,
+    required VoidCallback onPressed,
+  }) async {
+    return showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: onPressed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: color,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(buttonText),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   void _goToNextQuestion() {
     if (widget.questionIndex + 1 < widget.questions.length) {
+      Navigator.pop(context); // Cierra el diálogo actual
       navigateToQuestion(context, widget.questions, widget.questionIndex + 1);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -55,8 +134,10 @@ class _QuestionType3State extends State<QuestionType3> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.black87,
-        title: const Text('¿Seguro que quieres terminar tu lección?',
-          style: TextStyle(color: Colors.white),),
+        title: const Text(
+          '¿Seguro que quieres terminar tu lección?',
+          style: TextStyle(color: Colors.white),
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -108,24 +189,6 @@ class _QuestionType3State extends State<QuestionType3> {
               }
             },
           ),
-          actions: const [
-            Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Text(
-                    '5',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Icon(Icons.favorite, size: 30, color: Colors.red),
-                ],
-              ),
-            )
-          ],
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -170,14 +233,22 @@ class _QuestionType3State extends State<QuestionType3> {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _goToNextQuestion,
+                onPressed: _validateAndContinue,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF323232),
                   minimumSize: const Size(double.infinity, 50),
                 ),
                 child: const Text(
-                  'Omitir',
+                  'Continuar',
                   style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ),
+              const SizedBox(height: 20),
+              TextButton(
+                onPressed: _goToNextQuestion, // Ir a la siguiente pregunta
+                child: const Text(
+                  'Omitir',
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
             ],
