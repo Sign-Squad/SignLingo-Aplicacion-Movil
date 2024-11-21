@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'detect-image.dart';
 import 'navigateToQuestion.dart';
 
 
@@ -30,8 +31,12 @@ class _QuestionType3State extends State<QuestionType3> {
       setState(() {
         _imageFile = image;
       });
+
+      // Llamar a la función para cargar la imagen al servidor
+      await uploadImage(File(_imageFile!.path));
     }
   }
+
 
   void _goToNextQuestion() {
     if (widget.questionIndex + 1 < widget.questions.length) {

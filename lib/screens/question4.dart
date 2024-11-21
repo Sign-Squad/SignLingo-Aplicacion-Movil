@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'detect-image.dart';
 import 'navigateToQuestion.dart';
 
 class QuestionType4 extends StatefulWidget {
@@ -12,6 +12,7 @@ class QuestionType4 extends StatefulWidget {
     Key? key,
     required this.questions,
     required this.questionIndex,
+
   }) : super(key: key);
 
   @override
@@ -28,8 +29,12 @@ class _QuestionType4State extends State<QuestionType4> {
       setState(() {
         _imageFile = image;
       });
+
+      // Llamar a la función para cargar la imagen al servidor
+      await uploadImage(File(_imageFile!.path));
     }
   }
+
 
   void _goToNextQuestion() {
     if (widget.questionIndex + 1 < widget.questions.length) {
@@ -163,6 +168,8 @@ class _QuestionType4State extends State<QuestionType4> {
                   color: Colors.black45,
                 ),
               ),
+              const Spacer(),
+
               const SizedBox(height: 20),
               // Imagen capturada
               _imageFile == null
